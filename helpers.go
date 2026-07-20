@@ -130,6 +130,17 @@ func joinArgs(args []string, extra ...string) []string {
 	return out
 }
 
+// containsArg reports whether args already contains flag, used to avoid
+// duplicating a confirmation flag the caller supplied explicitly.
+func containsArg(args []string, flag string) bool {
+	for _, a := range args {
+		if a == flag {
+			return true
+		}
+	}
+	return false
+}
+
 // writeRepoFile writes config to filePath, creating parent directories.
 func writeRepoFile(filePath, config string) error {
 	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {

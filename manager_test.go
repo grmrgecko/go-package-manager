@@ -79,6 +79,71 @@ func TestJoinArgsDoesNotMutate(t *testing.T) {
 	assert.Equal(t, []string{"-y", "install", "vim"}, got)
 }
 
+func TestConfirmArgs(t *testing.T) {
+	var b baseManager
+
+	// Off by default: args pass through untouched.
+	assert.Equal(t, []string{"install"}, b.confirmArgs([]string{"install"}, "-y"))
+
+	b.AssumeYes()
+
+	// On: the flag is prepended so it precedes the subcommand.
+	assert.Equal(t, []string{"-y", "install"}, b.confirmArgs([]string{"install"}, "-y"))
+
+	// A flag the caller already supplied is not duplicated.
+	assert.Equal(t, []string{"-y", "install"}, b.confirmArgs([]string{"-y", "install"}, "-y"))
+
+	// Multiple flags are all injected, preserving order.
+	assert.Equal(t, []string{"-a", "-b", "-S"}, b.confirmArgs([]string{"-S"}, "-a", "-b"))
+
+	// The caller's slice is not mutated, even with spare capacity.
+	in := make([]string, 1, 8)
+	in[0] = "install"
+	_ = b.confirmArgs(in, "-y")
+	assert.Equal(t, []string{"install"}, in, "confirmArgs mutated its input")
+}
+
+// TestAssumeYesInjectsConfirmFlag verifies that, with AssumeYes enabled, each
+// manager places its own non-interactive confirmation flag ahead of the
+// subcommand so an unattended install does not stall on a prompt. A fake binary
+// on PATH records the arguments it receives.
+func TestAssumeYesInjectsConfirmFlag(t *testing.T) {
+	cases := []struct {
+		name string
+		bin  string
+		newM func() Manager
+		want []string
+	}{
+		{"dnf", "dnf", func() Manager { return &Dnf{} }, []string{"-y", "install", "vim"}},
+		{"yum", "yum", func() Manager { return &Yum{} }, []string{"-y", "install", "vim"}},
+		{"apt", "apt", func() Manager { return &Apt{} }, []string{"-y", "install", "vim"}},
+		{"apt-get", "apt-get", func() Manager { return &AptGet{} }, []string{"-y", "install", "vim"}},
+		{"pacman", "pacman", func() Manager { return &Pacman{} }, []string{"--noconfirm", "-S", "vim"}},
+		// zypper's --non-interactive is a global option that must precede the
+		// subcommand, which prepending guarantees.
+		{"zypper", "zypper", func() Manager { return &Zypper{} }, []string{"--non-interactive", "install", "vim"}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			marker := filepath.Join(dir, "args")
+			// The fake binary records each argument on its own line, then exits 0.
+			script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + marker + "\n"
+			require.NoError(t, os.WriteFile(filepath.Join(dir, tc.bin), []byte(script), 0755))
+			t.Setenv("PATH", dir)
+
+			m := tc.newM()
+			m.AssumeYes()
+			require.NoError(t, m.Install(context.Background(), nil, "vim"))
+
+			data, err := os.ReadFile(marker)
+			require.NoError(t, err, "manager did not invoke the binary")
+			assert.Equal(t, tc.want, strings.Fields(string(data)))
+		})
+	}
+}
+
 func TestParseVersionList(t *testing.T) {
 	in := "git := 1:2.39.0\nfoo := 0:1.0\nmalformed line\n\n  bar  :=  2.0 \n"
 	got, err := parseVersionList(strings.NewReader(in), " := ", true)

@@ -43,17 +43,17 @@ func (p *Zypper) Sync(ctx context.Context, args []string) error {
 
 // Install installs packages from the repositories.
 func (p *Zypper) Install(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "install"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "--non-interactive"), "install"), packages...)...)
 }
 
 // Remove removes packages.
 func (p *Zypper) Remove(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "remove"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "--non-interactive"), "remove"), packages...)...)
 }
 
 // Upgrade upgrades the named packages.
 func (p *Zypper) Upgrade(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "update"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "--non-interactive"), "update"), packages...)...)
 }
 
 // InstallFile installs a package from a local file.
@@ -63,7 +63,7 @@ func (p *Zypper) InstallFile(ctx context.Context, args []string, packages ...str
 
 // UpgradeAll upgrades all packages with available updates.
 func (p *Zypper) UpgradeAll(ctx context.Context, args []string) error {
-	return p.exec(ctx, joinArgs(args, "update")...)
+	return p.exec(ctx, joinArgs(p.confirmArgs(args, "--non-interactive"), "update")...)
 }
 
 // Clean removes cached repository metadata and packages.

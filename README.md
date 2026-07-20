@@ -102,6 +102,7 @@ I/O take a `context.Context` for cancellation and timeouts.
 
 - **Identity:** `Name`, `Format`, `Path`
 - **Privilege:** `SetCmdWrapper`, `UseSudoWhenNeeded`
+- **Prompts:** `AssumeYes` (answer confirmation prompts automatically)
 - **I/O:** `SetIO` (override stdin/stdout/stderr of spawned commands)
 - **Repos:** `AddRepo`, `AddRepoURL`, `RemoveRepo`, `GetRepo`, `ListRepos`
 - **Keys:** `AddRepoKey`, `AddRepoKeyFile`, `AddRepoKeyURL`
@@ -129,6 +130,16 @@ Two mechanisms cover opposite requirements:
 
 A custom command wrapper (for example `[]string{"sudo", "-n"}`) can be supplied
 through `SetCmdWrapper`.
+
+## Unattended operation
+
+By default the managers run their tools interactively, so a mutating operation
+prompts for confirmation and aborts when no terminal is attached. `AssumeYes`
+enables unattended mode: each manager injects its own non-interactive
+confirmation flag (`-y` for `dnf`/`yum`/`apt`, `--noconfirm` for `pacman`/AUR
+helpers, `--non-interactive` for `zypper`) into `Install`, `Remove`, `Upgrade`,
+`InstallFile`, and `UpgradeAll`. A flag supplied explicitly through a method's
+`args` is not duplicated.
 
 ## Testing
 

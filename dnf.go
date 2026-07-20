@@ -40,17 +40,17 @@ func (p *Dnf) Sync(ctx context.Context, args []string) error {
 
 // Install installs packages from the repositories.
 func (p *Dnf) Install(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "install"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "-y"), "install"), packages...)...)
 }
 
 // Remove removes packages.
 func (p *Dnf) Remove(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "remove"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "-y"), "remove"), packages...)...)
 }
 
 // Upgrade upgrades the named packages.
 func (p *Dnf) Upgrade(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "upgrade"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "-y"), "upgrade"), packages...)...)
 }
 
 // InstallFile installs a package from a local file.
@@ -60,7 +60,7 @@ func (p *Dnf) InstallFile(ctx context.Context, args []string, packages ...string
 
 // UpgradeAll upgrades all packages with available updates.
 func (p *Dnf) UpgradeAll(ctx context.Context, args []string) error {
-	return p.exec(ctx, joinArgs(args, "upgrade")...)
+	return p.exec(ctx, joinArgs(p.confirmArgs(args, "-y"), "upgrade")...)
 }
 
 // Clean removes cached repository metadata and packages.

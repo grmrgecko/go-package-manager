@@ -128,12 +128,12 @@ func (p *Pacman) Sync(ctx context.Context, args []string) error {
 
 // Install installs packages from the repositories.
 func (p *Pacman) Install(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "-S"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "--noconfirm"), "-S"), packages...)...)
 }
 
 // Remove removes packages.
 func (p *Pacman) Remove(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "-R"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "--noconfirm"), "-R"), packages...)...)
 }
 
 // Upgrade upgrades the named packages.
@@ -143,12 +143,12 @@ func (p *Pacman) Upgrade(ctx context.Context, args []string, packages ...string)
 
 // InstallFile installs a package from a local file.
 func (p *Pacman) InstallFile(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "-U"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "--noconfirm"), "-U"), packages...)...)
 }
 
 // UpgradeAll upgrades all packages with available updates.
 func (p *Pacman) UpgradeAll(ctx context.Context, args []string) error {
-	return p.exec(ctx, joinArgs(args, "-Syu")...)
+	return p.exec(ctx, joinArgs(p.confirmArgs(args, "--noconfirm"), "-Syu")...)
 }
 
 // Clean removes cached packages from the package cache.

@@ -32,6 +32,11 @@ type Manager interface {
 	// root. It is a no-op as root, and managers that must not run as root
 	// (brew, yay, paru) bypass the wrapper for their own command.
 	UseSudoWhenNeeded()
+	// AssumeYes enables unattended operation so state-changing commands answer
+	// their confirmation prompt automatically. It is required when the manager
+	// runs without a controlling terminal, where an unanswered prompt aborts
+	// the operation.
+	AssumeYes()
 	// SetIO overrides the stdin, stdout, and stderr used by spawned commands.
 	// Passing nil for a stream restores its os default.
 	SetIO(stdin io.Reader, stdout, stderr io.Writer)
@@ -102,10 +107,11 @@ func GetSystemManager() Manager {
 
 // baseManager holds state and helpers shared by every manager implementation.
 type baseManager struct {
-	wrapper []string
-	stdin   io.Reader
-	stdout  io.Writer
-	stderr  io.Writer
+	wrapper   []string
+	assumeYes bool
+	stdin     io.Reader
+	stdout    io.Writer
+	stderr    io.Writer
 }
 
 // SetCmdWrapper sets a command wrapper, for example []string{"sudo"}.
@@ -118,6 +124,33 @@ func (p *baseManager) SetIO(stdin io.Reader, stdout, stderr io.Writer) {
 	p.stdin = stdin
 	p.stdout = stdout
 	p.stderr = stderr
+}
+
+// AssumeYes enables unattended operation so state-changing commands answer
+// their confirmation prompt automatically. It is an opt-in toggle honored by
+// each manager's Install, Remove, Upgrade, InstallFile, and UpgradeAll methods.
+func (p *baseManager) AssumeYes() {
+	p.assumeYes = true
+}
+
+// confirmArgs prepends the manager's non-interactive confirmation flags to args
+// when AssumeYes is enabled, so an unattended run does not stall on a prompt. It
+// returns args unchanged when the toggle is off, and never duplicates a flag the
+// caller already supplied.
+func (p *baseManager) confirmArgs(args []string, flags ...string) []string {
+	if !p.assumeYes {
+		return args
+	}
+	var prefix []string
+	for _, f := range flags {
+		if !containsArg(args, f) {
+			prefix = append(prefix, f)
+		}
+	}
+	if len(prefix) == 0 {
+		return args
+	}
+	return append(prefix, args...)
 }
 
 // stdinOrDefault returns the configured stdin, or os.Stdin when unset.

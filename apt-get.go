@@ -43,12 +43,12 @@ func (p *AptGet) Sync(ctx context.Context, args []string) error {
 
 // Install installs packages from the repositories.
 func (p *AptGet) Install(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "install"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "-y"), "install"), packages...)...)
 }
 
 // Remove removes packages.
 func (p *AptGet) Remove(ctx context.Context, args []string, packages ...string) error {
-	return p.exec(ctx, append(joinArgs(args, "remove"), packages...)...)
+	return p.exec(ctx, append(joinArgs(p.confirmArgs(args, "-y"), "remove"), packages...)...)
 }
 
 // Upgrade upgrades the named packages.
@@ -63,7 +63,7 @@ func (p *AptGet) InstallFile(ctx context.Context, args []string, packages ...str
 
 // UpgradeAll upgrades all packages with available updates.
 func (p *AptGet) UpgradeAll(ctx context.Context, args []string) error {
-	return p.exec(ctx, joinArgs(args, "upgrade")...)
+	return p.exec(ctx, joinArgs(p.confirmArgs(args, "-y"), "upgrade")...)
 }
 
 // Clean removes the local package cache.

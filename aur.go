@@ -55,12 +55,12 @@ func (p *aurBase) Sync(ctx context.Context, args []string) error {
 
 // Install installs packages from the repositories and the AUR.
 func (p *aurBase) Install(ctx context.Context, args []string, packages ...string) error {
-	return p.aurExec(ctx, append(joinArgs(args, "-S"), packages...)...)
+	return p.aurExec(ctx, append(joinArgs(p.confirmArgs(args, "--noconfirm"), "-S"), packages...)...)
 }
 
 // Remove removes packages.
 func (p *aurBase) Remove(ctx context.Context, args []string, packages ...string) error {
-	return p.aurExec(ctx, append(joinArgs(args, "-R"), packages...)...)
+	return p.aurExec(ctx, append(joinArgs(p.confirmArgs(args, "--noconfirm"), "-R"), packages...)...)
 }
 
 // Upgrade upgrades the named packages.
@@ -70,12 +70,12 @@ func (p *aurBase) Upgrade(ctx context.Context, args []string, packages ...string
 
 // InstallFile installs a package from a local file.
 func (p *aurBase) InstallFile(ctx context.Context, args []string, packages ...string) error {
-	return p.aurExec(ctx, append(joinArgs(args, "-U"), packages...)...)
+	return p.aurExec(ctx, append(joinArgs(p.confirmArgs(args, "--noconfirm"), "-U"), packages...)...)
 }
 
 // UpgradeAll upgrades all packages with available updates, including the AUR.
 func (p *aurBase) UpgradeAll(ctx context.Context, args []string) error {
-	return p.aurExec(ctx, joinArgs(args, "-Syu")...)
+	return p.aurExec(ctx, joinArgs(p.confirmArgs(args, "--noconfirm"), "-Syu")...)
 }
 
 // Search searches the repositories and the AUR for packages matching query. The
