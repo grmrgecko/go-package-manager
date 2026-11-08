@@ -40,6 +40,11 @@ type Manager interface {
 	// SetIO overrides the stdin, stdout, and stderr used by spawned commands.
 	// Passing nil for a stream restores its os default.
 	SetIO(stdin io.Reader, stdout, stderr io.Writer)
+	// SetEnv adds KEY=value entries to the environment of spawned commands, on
+	// top of the process environment, without changing the process's own. It
+	// lets a caller pass a value, such as a license token read by a package's
+	// install scripts, to this manager's commands alone. Passing nil clears it.
+	SetEnv(env []string)
 	// AddRepo adds a repo from a configuration string.
 	AddRepo(name, config string) error
 	// AddRepoURL adds a repo whose configuration is downloaded from repoURL.
@@ -112,6 +117,7 @@ type baseManager struct {
 	stdin     io.Reader
 	stdout    io.Writer
 	stderr    io.Writer
+	env       []string
 }
 
 // SetCmdWrapper sets a command wrapper, for example []string{"sudo"}.
@@ -124,6 +130,17 @@ func (p *baseManager) SetIO(stdin io.Reader, stdout, stderr io.Writer) {
 	p.stdin = stdin
 	p.stdout = stdout
 	p.stderr = stderr
+}
+
+// SetEnv adds KEY=value entries to the environment of spawned commands.
+func (p *baseManager) SetEnv(env []string) {
+	p.env = append([]string(nil), env...)
+}
+
+// environ is the environment for a spawned command: the process environment
+// with the entries from SetEnv, which win over a variable of the same name.
+func (p *baseManager) environ() []string {
+	return append(os.Environ(), p.env...)
 }
 
 // AssumeYes enables unattended operation so state-changing commands answer
@@ -190,7 +207,7 @@ func (p *baseManager) Command(ctx context.Context, command string, args ...strin
 		command = p.wrapper[0]
 	}
 	cmd := exec.CommandContext(ctx, command, args...)
-	cmd.Env = os.Environ()
+	cmd.Env = p.environ()
 	cmd.Stdin = p.stdinOrDefault()
 	cmd.Stdout = p.stdoutOrDefault()
 	cmd.Stderr = p.stderrOrDefault()

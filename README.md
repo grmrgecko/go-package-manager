@@ -103,7 +103,8 @@ I/O take a `context.Context` for cancellation and timeouts.
 - **Identity:** `Name`, `Format`, `Path`
 - **Privilege:** `SetCmdWrapper`, `UseSudoWhenNeeded`
 - **Prompts:** `AssumeYes` (answer confirmation prompts automatically)
-- **I/O:** `SetIO` (override stdin/stdout/stderr of spawned commands)
+- **I/O:** `SetIO` (override stdin/stdout/stderr of spawned commands), `SetEnv`
+  (add environment variables to spawned commands only)
 - **Repos:** `AddRepo`, `AddRepoURL`, `RemoveRepo`, `GetRepo`, `ListRepos`
 - **Keys:** `AddRepoKey`, `AddRepoKeyFile`, `AddRepoKeyURL`
 - **Packages:** `Sync`, `Install`, `Remove`, `Upgrade`, `InstallFile`,
@@ -140,6 +141,11 @@ confirmation flag (`-y` for `dnf`/`yum`/`apt`, `--noconfirm` for `pacman`/AUR
 helpers, `--non-interactive` for `zypper`) into `Install`, `Remove`, `Upgrade`,
 `InstallFile`, and `UpgradeAll`. A flag supplied explicitly through a method's
 `args` is not duplicated.
+
+A package whose install scripts read a value from the environment, such as a
+license token, can be given it with `SetEnv` instead of `os.Setenv`, so it
+reaches only this manager's commands and not the rest of the process. Commands
+wrapped with `sudo` see it only where sudo's policy keeps the environment.
 
 ## Testing
 

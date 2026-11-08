@@ -63,7 +63,7 @@ func (p *baseManager) commandUnprivileged(ctx context.Context, bin, dropUser str
 	}
 
 	cmd := exec.CommandContext(ctx, command, cargs...)
-	cmd.Env = os.Environ()
+	cmd.Env = p.environ()
 	cmd.Stdin = p.stdinOrDefault()
 	cmd.Stdout = p.stdoutOrDefault()
 	cmd.Stderr = p.stderrOrDefault()

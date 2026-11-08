@@ -68,6 +68,26 @@ func TestCommandIO(t *testing.T) {
 	assert.Same(t, in, cmd.Stdin)
 }
 
+// TestCommandEnv verifies that SetEnv reaches spawned commands without changing
+// the process environment, and that its entries win over the process's own,
+// since exec keeps the last of duplicate names.
+func TestCommandEnv(t *testing.T) {
+	t.Setenv("PKGMGR_TEST_SHARED", "process")
+	var b baseManager
+	var out bytes.Buffer
+	b.SetIO(nil, &out, nil)
+	b.SetEnv([]string{"PKGMGR_TEST_TOKEN=secret", "PKGMGR_TEST_SHARED=manager"})
+	require.NoError(t, b.Command(context.Background(), "sh", "-c", `printf '%s %s' "$PKGMGR_TEST_TOKEN" "$PKGMGR_TEST_SHARED"`).Run())
+	assert.Equal(t, "secret manager", out.String())
+	_, set := os.LookupEnv("PKGMGR_TEST_TOKEN")
+	assert.False(t, set, "the process environment must not change")
+
+	out.Reset()
+	b.SetEnv(nil)
+	require.NoError(t, b.Command(context.Background(), "sh", "-c", `printf '%s' "$PKGMGR_TEST_TOKEN"`).Run())
+	assert.Empty(t, out.String(), "SetEnv(nil) clears the added entries")
+}
+
 func TestJoinArgsDoesNotMutate(t *testing.T) {
 	base := make([]string, 1, 8) // spare capacity would let append clobber base
 	base[0] = "-y"
