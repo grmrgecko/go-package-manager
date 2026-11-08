@@ -86,7 +86,9 @@ func (p *Brew) GetRepo(name string) string {
 		return ""
 	}
 	// Output captures stdout itself, so this bypasses the configured writers.
-	out, err := exec.CommandContext(context.Background(), bin, "tap-info", name).Output()
+	cmd := exec.CommandContext(context.Background(), bin, "tap-info", name)
+	cmd.Env = p.environ()
+	out, err := cmd.Output()
 	if err != nil {
 		return ""
 	}
